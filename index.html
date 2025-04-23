@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meteor Background</title>
+  <!-- Tailwind CDN for your utility classes -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel for JSX transpile in the browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="m-0 p-0">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // pull React hooks off the global
+    const { useEffect, useRef, useState } = React;
+
+    function MeteorBackground() {
+      const canvasRef = useRef(null);
+      const [dim, setDim] = useState({ width: 0, height: 0 });
+
+      useEffect(() => {
+        const update = () => setDim({ width: innerWidth, height: innerHeight });
+        update();
+        window.addEventListener('resize', update);
+        return () => window.removeEventListener('resize', update);
+      }, []);
+
+      useEffect(() => {
+        const c = canvasRef.current;
+        if (!c || dim.width === 0) return;
+        const ctx = c.getContext('2d');
+        c.width = dim.width; c.height = dim.height;
+
+        const COLOR = "#9933FF", W=11, L=80, S=10;
+        const diag = Math.hypot(dim.width, dim.height);
+        const meteors = [];
+
+        class Meteor {
+          constructor(init=false, i=0) { this.i=i; this.reset(init); }
+          reset(init=false) {
+            if (init) {
+              const gx = this.i % 3, gy = Math.floor(this.i/3);
+              this.x = dim.width*0.25 + gx*dim.width*0.25 + Math.random()*dim.width*0.15;
+              this.y = gy*dim.height*0.3 - dim.height*0.5 + Math.random()*dim.height*0.15;
+            } else {
+              if (Math.random()>0.3) {
+                this.x = Math.random()*dim.width*1.2; this.y = -W*2;
+              } else {
+                this.x = -W*2; this.y = Math.random()*dim.height*0.6;
+              }
+            }
+            this.w = W; this.len = L;
+            const ang = Math.PI*0.25;
+            this.vx = Math.cos(ang)*S; this.vy = Math.sin(ang)*S;
+            this.color = COLOR;
+            this.opacity = 0.7 + Math.random()*0.2;
+            this.calcEnds();
+          }
+          calcEnds() {
+            const ang = Math.atan2(this.vy, this.vx);
+            this.ex = this.x - Math.cos(ang)*this.len;
+            this.ey = this.y - Math.sin(ang)*this.len;
+          }
+          update() {
+            this.x += this.vx; this.y += this.vy;
+            this.calcEnds();
+            if (this.x - this.len > dim.width || this.y - this.len > dim.height) this.reset();
+          }
+          draw(ctx) {
+            ctx.save();
+            ctx.lineWidth = this.w;
+            ctx.lineCap = 'round';
+            const grad = ctx.createLinearGradient(this.x,this.y,this.ex,this.ey);
+            grad.addColorStop(0, this.color);
+            grad.addColorStop(1, 'rgba(153,51,255,0)');
+            ctx.strokeStyle = grad;
+            ctx.globalAlpha = this.opacity;
+            ctx.beginPath();
+            ctx.moveTo(this.x,this.y);
+            ctx.lineTo(this.ex,this.ey);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+
+        for (let i=0; i<5; i++) meteors.push(new Meteor(true, i));
+
+        function draw() {
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fillRect(0, 0, c.width, c.height);
+          meteors.forEach(m => { m.update(); m.draw(ctx); });
+          requestAnimationFrame(draw);
+        }
+
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0,0,c.width,c.height);
+        draw();
+
+      }, [dim]);
+
+      return (
+        <div className="w-full h-screen overflow-hidden bg-black">
+          <canvas ref={canvasRef} className="w-full h-full"></canvas>
+        </div>
+      );
+    }
+
+    // Render it
+    ReactDOM.createRoot(document.getElementById('root')).render(<MeteorBackground />);
+  </script>
+</body>
+</html>
