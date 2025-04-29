@@ -36,7 +36,7 @@
         const ctx = c.getContext('2d');
         c.width = dim.width; c.height = dim.height;
 
-        const COLOR = "#9933FF", W=11, L=80, S=10;
+        const COLOR = "#FFFFFF", W=11, L=80, S=10, NUM_METEORS = 8; // Changed COLOR, added NUM_METEORS
         const diag = Math.hypot(dim.width, dim.height);
         const meteors = [];
 
@@ -44,9 +44,13 @@
           constructor(init=false, i=0) { this.i=i; this.reset(init); }
           reset(init=false) {
             if (init) {
-              const gx = this.i % 3, gy = Math.floor(this.i/3);
-              this.x = dim.width*0.25 + gx*dim.width*0.25 + Math.random()*dim.width*0.15;
-              this.y = gy*dim.height*0.3 - dim.height*0.5 + Math.random()*dim.height*0.15;
+              // Spread out more using a wider grid (e.g., 4 columns)
+              const cols = 4;
+              const gx = this.i % cols;
+              const gy = Math.floor(this.i / cols);
+              // Adjust multipliers for wider spread
+              this.x = dim.width * 0.15 + gx * dim.width * 0.20 + Math.random() * dim.width * 0.10;
+              this.y = gy * dim.height * 0.4 - dim.height * 0.6 + Math.random() * dim.height * 0.10;
             } else {
               if (Math.random()>0.3) {
                 this.x = Math.random()*dim.width*1.2; this.y = -W*2;
@@ -58,7 +62,7 @@
             const ang = Math.PI*0.25;
             this.vx = Math.cos(ang)*S; this.vy = Math.sin(ang)*S;
             this.color = COLOR;
-            this.opacity = 0.7 + Math.random()*0.2;
+            this.opacity = 0.8; // Fixed opacity
             this.calcEnds();
           }
           calcEnds() {
@@ -69,15 +73,17 @@
           update() {
             this.x += this.vx; this.y += this.vy;
             this.calcEnds();
-            if (this.x - this.len > dim.width || this.y - this.len > dim.height) this.reset();
+            // Adjusted reset condition slightly for wider spread
+            if (this.x - this.len > dim.width * 1.1 || this.y - this.len > dim.height * 1.1) this.reset();
           }
           draw(ctx) {
             ctx.save();
             ctx.lineWidth = this.w;
             ctx.lineCap = 'round';
             const grad = ctx.createLinearGradient(this.x,this.y,this.ex,this.ey);
+            // Adjust gradient for white color
             grad.addColorStop(0, this.color);
-            grad.addColorStop(1, 'rgba(153,51,255,0)');
+            grad.addColorStop(1, 'rgba(255,255,255,0)'); // Fade to transparent white
             ctx.strokeStyle = grad;
             ctx.globalAlpha = this.opacity;
             ctx.beginPath();
@@ -88,7 +94,8 @@
           }
         }
 
-        for (let i=0; i<5; i++) meteors.push(new Meteor(true, i));
+        // Increased meteor count
+        for (let i=0; i<NUM_METEORS; i++) meteors.push(new Meteor(true, i));
 
         function draw() {
           ctx.fillStyle = 'rgba(0,0,0,0.3)';
