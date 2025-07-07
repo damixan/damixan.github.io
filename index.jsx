@@ -134,7 +134,7 @@ export default function MeteorBackground() {
       draw(ctx) {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+        ctx.fillStyle = `rgba(153, 51, 255, ${this.opacity})`;
         ctx.fill();
       }
     }
